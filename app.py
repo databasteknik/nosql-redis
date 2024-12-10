@@ -12,28 +12,11 @@ cache = redis.Redis(
 # PostgreSQL connection setup
 conn = psycopg2.connect(
     host="localhost",
-    database="test_db",
+    database="postgres",
     user="postgres",
-    password="password"
+    password="123"
 )
 cur = conn.cursor()
-
-
-# Create a Post
-@app.route('/posts', methods=['POST'])
-def create_post():
-    data = request.json
-    title = data.get("title")
-    if not title:
-        return jsonify({"error": "Title is required"}), 400
-
-    # Insert post into PostgreSQL
-    cur.execute("INSERT INTO posts (title) VALUES (%s) RETURNING id", (title,))
-    post_id = cur.fetchone()[0]
-    conn.commit()
-
-    return jsonify({"message": "Post created", "post_id": post_id}), 201
-
 
 # Like a Post
 @app.route('/posts/<int:post_id>/like', methods=['POST'])
@@ -63,31 +46,6 @@ def like_post(post_id):
     cache.incr(f"post:{post_id}:likes")
 
     return jsonify({"message": "Post liked"}), 201
-
-
-# Unlike a Post
-@app.route('/posts/<int:post_id>/unlike', methods=['POST'])
-def unlike_post(post_id):
-    user_id = request.json.get("user_id")
-    if not user_id:
-        return jsonify({"error": "User ID is required"}), 400
-
-    # Remove like from PostgreSQL
-    cur.execute(
-        "DELETE FROM likes WHERE post_id = %s AND user_id = %s RETURNING id",
-        (post_id, user_id)
-    )
-    result = cur.fetchone()
-    if not result:
-        return jsonify({"error": "Like not found"}), 404
-
-    conn.commit()
-
-    # Decrement Redis like count
-    cache.decr(f"post:{post_id}:likes", 1)
-
-    return jsonify({"message": "Post unliked"}), 200
-
 
 # Get Like Count
 @app.route('/posts/<int:post_id>/likes', methods=['GET'])

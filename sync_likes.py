@@ -7,9 +7,9 @@ cache = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 # PostgreSQL connection setup
 conn = psycopg2.connect(
     host="localhost",
-    database="test_db",
+    database="postgres",
     user="postgres",
-    password="password"
+    password="123"
 )
 cur = conn.cursor()
 
